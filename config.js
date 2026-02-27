@@ -26,5 +26,6 @@ const CONFIG = {
   MAX_CHARACTERS:     5000,
 
   // ── Request Settings ─────────────────────────────────────────
-  REQUEST_TIMEOUT_MS: 15000,
+  REQUEST_TIMEOUT_MS: 60000,
 };
+
