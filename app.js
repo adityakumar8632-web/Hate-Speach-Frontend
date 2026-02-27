@@ -225,11 +225,10 @@
   })();
   
   /* ──────────────────────────────────────────────────────────────
-     8. API — OpenAI Moderation API integration
-     Endpoint: POST https://api.openai.com/v1/moderations
-     Model:    omni-moderation-latest
+     8. API — ClearText Secure Backend Proxy integration
+     Endpoint: POST https://hate-speech-backend.onrender.com/moderate
+     Proxies:  OpenAI omni-moderation-latest (API key stays server-side)
      Docs:     https://platform.openai.com/docs/api-reference/moderations
-     Cost:     FREE — moderation endpoint has no token charge.
      ────────────────────────────────────────────────────────────── */
   const API = (() => {
     /**
@@ -252,21 +251,17 @@
      * @throws {Error} With user-friendly message on failure
      */
     async function analyzeText(text) {
-      // — Validate config
-      if (typeof CONFIG === 'undefined') {
-        throw new Error('Configuration not loaded. Please check config.js.');
-      }
-      if (!CONFIG.OPENAI_API_KEY || CONFIG.OPENAI_API_KEY === 'YOUR_OPENAI_API_KEY_HERE') {
-        throw new Error('API key not configured. Open config.js and add your OpenAI API key.');
-      }
-  
+      const BACKEND_URL    = 'https://hate-speech-backend.onrender.com/moderate';
+      const TIMEOUT_MS     = (typeof CONFIG !== 'undefined' ? CONFIG.REQUEST_TIMEOUT_MS : null) || 15000;
+      const MAX_CHARACTERS = (typeof CONFIG !== 'undefined' ? CONFIG.MAX_CHARACTERS    : null) || 5000;
+
       // — Validate input
       const trimmed = text.trim();
       if (!trimmed) {
         throw new Error('Please enter some text to analyze.');
       }
-      if (trimmed.length > CONFIG.MAX_CHARACTERS) {
-        throw new Error(`Text too long. Maximum ${CONFIG.MAX_CHARACTERS.toLocaleString()} characters.`);
+      if (trimmed.length > MAX_CHARACTERS) {
+        throw new Error(`Text too long. Maximum ${MAX_CHARACTERS.toLocaleString()} characters.`);
       }
   
       // — Check connectivity
@@ -276,23 +271,15 @@
   
       // — Build request with timeout
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), CONFIG.REQUEST_TIMEOUT_MS);
-  
-      const payload = {
-        model: CONFIG.OPENAI_MODEL,
-        input: trimmed,
-      };
+      const timeoutId  = setTimeout(() => controller.abort(), TIMEOUT_MS);
   
       let response;
       try {
-        response = await fetch(CONFIG.OPENAI_API_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${CONFIG.OPENAI_API_KEY}`,
-          },
-          body: JSON.stringify(payload),
-          signal: controller.signal,
+        response = await fetch(BACKEND_URL, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ text: trimmed }),
+          signal:  controller.signal,
         });
       } catch (err) {
         if (err.name === 'AbortError') {
@@ -303,27 +290,27 @@
         clearTimeout(timeoutId);
       }
   
-      // — Handle HTTP errors
+      // — Handle HTTP errors from our backend
       if (!response.ok) {
-        let errorMsg = `API error (${response.status})`;
+        let errorMsg = `Server error (${response.status})`;
         try {
           const errorData = await response.json();
-          const apiMessage = errorData?.error?.message;
-          if (response.status === 400) errorMsg = apiMessage || 'Invalid request. Try analyzing different text.';
-          else if (response.status === 401)  errorMsg = 'Invalid API key. Check your OpenAI key in config.js.';
-          else if (response.status === 403)  errorMsg = 'Access denied. Ensure your OpenAI account is active.';
-          else if (response.status === 429)  errorMsg = 'Rate limit exceeded. Please wait a moment and try again.';
-          else if (response.status === 500)  errorMsg = 'OpenAI server error. Please try again shortly.';
-          else if (apiMessage)               errorMsg = apiMessage;
+          const msg = errorData?.message;
+          if (response.status === 400) errorMsg = msg || 'Invalid request. Try analyzing different text.';
+          else if (response.status === 502) errorMsg = 'Could not reach OpenAI. Please try again shortly.';
+          else if (response.status === 504) errorMsg = 'Request timed out reaching OpenAI. Please try again.';
+          else if (response.status === 429) errorMsg = 'Too many requests. Please wait a moment and try again.';
+          else if (response.status === 500) errorMsg = 'Internal server error. Please try again shortly.';
+          else if (msg)                     errorMsg = msg;
         } catch (_) { /* Ignore JSON parse error on error body */ }
         throw new Error(errorMsg);
       }
   
       const data = await response.json();
   
-      // — Validate response structure
-      if (!data.results || !data.results[0]?.category_scores) {
-        throw new Error('Unexpected response format from OpenAI API.');
+      // — Validate backend response structure
+      if (typeof data.flagged === 'undefined' || !data.scores) {
+        throw new Error('Unexpected response from moderation server.');
       }
   
       return data;
@@ -347,9 +334,8 @@
      * @returns {Object} Normalized results object
      */
     function parseResponse(data, inputText) {
-      const result  = data.results[0];
-      const cs      = result.category_scores;   // raw 0.0–1.0 floats
-      const flagged = result.flagged;           // overall boolean flag from OpenAI
+      const cs      = data.scores;    // flat scores object, 0.0–1.0 floats
+      const flagged = data.flagged;   // overall boolean flag from backend
   
       // Helper: convert float to rounded integer percentage
       const pct = (val) => (val != null ? Math.round(val * 100) : 0);
@@ -373,7 +359,7 @@
         text: inputText,
         scores,
         overallScore,
-        flaggedByApi: flagged,   // OpenAI's own binary verdict
+        flaggedByApi: flagged,
         timestamp: new Date().toISOString(),
       };
     }
