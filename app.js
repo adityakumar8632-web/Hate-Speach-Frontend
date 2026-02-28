@@ -251,7 +251,11 @@
      * @throws {Error} With user-friendly message on failure
      */
     async function analyzeText(text) {
-      const BACKEND_URL    = 'https://hate-speech-backend.onrender.com/moderate';
+      const BACKEND_URL    = 
+         typeof CONFIG !== "undefined"
+          ? CONFIG.MODERATE_ENDPOINT
+          : "http://localhost:3000/moderate";
+      // 'https://hate-speech-backend.onrender.com/moderate'
       const TIMEOUT_MS     = (typeof CONFIG !== 'undefined' ? CONFIG.REQUEST_TIMEOUT_MS : null) || 15000;
       const MAX_CHARACTERS = (typeof CONFIG !== 'undefined' ? CONFIG.MAX_CHARACTERS    : null) || 5000;
 
@@ -730,3 +734,4 @@
       console.log('%cPowered by OpenAI Moderation API — https://platform.openai.com/docs/guides/moderation', 'color: #5a5a7a; font-size: 11px;');
     }
   })();
+
