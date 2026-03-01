@@ -654,6 +654,71 @@
     100% { transform: scale(2.2); opacity: 0; }
   }
   
+  /* ─── Server Status Indicator ───────────────────────────────── */
+  .server-status {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-2);
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    letter-spacing: 0.01em;
+    padding: var(--sp-1) 0;
+    transition: color var(--t-mid) ease;
+    user-select: none;
+  }
+
+  .server-status__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    flex-shrink: 0;
+    transition: background var(--t-mid) ease, box-shadow var(--t-mid) ease;
+  }
+
+  /* States */
+  .server-status--checking .server-status__dot {
+    background: rgba(148, 148, 184, 0.5);
+    animation: statusPulse 1.4s ease-in-out infinite;
+  }
+
+  .server-status--online {
+    color: var(--score-safe);
+  }
+  .server-status--online .server-status__dot {
+    background: var(--score-safe);
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.6), 0 0 0 3px rgba(34, 197, 94, 0.15);
+    animation: onlinePulse 2.5s ease-in-out infinite;
+  }
+
+  .server-status--offline {
+    color: #f87171;
+  }
+  .server-status--offline .server-status__dot {
+    background: #ef4444;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+  }
+
+  .server-status--waking {
+    color: var(--score-warn);
+  }
+  .server-status--waking .server-status__dot {
+    background: var(--score-warn);
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+    animation: statusPulse 0.9s ease-in-out infinite;
+  }
+
+  @keyframes onlinePulse {
+    0%, 100% { box-shadow: 0 0 8px rgba(34, 197, 94, 0.6), 0 0 0 3px rgba(34, 197, 94, 0.15); }
+    50%       { box-shadow: 0 0 12px rgba(34, 197, 94, 0.9), 0 0 0 5px rgba(34, 197, 94, 0.08); }
+  }
+
+  @keyframes statusPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.4; transform: scale(0.85); }
+  }
+
   /* ─── Results Section ────────────────────────────────────────── */
   .section--results {
     padding: var(--sp-8) 0 var(--sp-16);
