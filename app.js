@@ -354,6 +354,12 @@ const API = (() => {
       clearTimeout(timeoutId);
     }
 
+    if (response.status === 503) {
+      let waitSecs = 20;
+      try { const d = await response.json(); waitSecs = Math.ceil(d?.estimated_time ?? 20); } catch (_) {}
+      throw new Error(`The AI model is warming up. Please wait ${waitSecs} seconds then try again.`);
+    }
+
     if (!response.ok) {
       let errorMsg = `Server error (${response.status})`;
       try {
@@ -362,8 +368,8 @@ const API = (() => {
         if (response.status === 400)      errorMsg = msg || 'Invalid request. Try analyzing different text.';
         else if (response.status === 403) errorMsg = 'Access denied by server (CORS). Contact support.';
         else if (response.status === 429) errorMsg = 'Too many requests. Please wait a moment and try again.';
-        else if (response.status === 502) errorMsg = 'Could not reach OpenAI. Please try again shortly.';
-        else if (response.status === 504) errorMsg = 'Request timed out reaching OpenAI. Please try again.';
+        else if (response.status === 502) errorMsg = 'Could not reach the AI model. Please try again shortly.';
+        else if (response.status === 504) errorMsg = 'Request timed out. Please try again.';
         else if (response.status === 500) errorMsg = 'Internal server error. Please try again shortly.';
         else if (msg)                     errorMsg = msg;
       } catch (_) { /* Ignore JSON parse error on error body */ }
