@@ -242,7 +242,7 @@ const ServerStatus = (() => {
     const timerId    = setTimeout(() => controller.abort(), CHECK_TIMEOUT);
 
     try {
-      const res = await fetch(HEALTH_URL, {
+      const res = await fetch(/health, {
         method: 'GET',
         signal: controller.signal,
         cache:  'no-store',
