@@ -215,7 +215,7 @@ const CharCount = (() => {
    ────────────────────────────────────────────────────────────── */
 const ServerStatus = (() => {
   const HEALTH_URL    = typeof CONFIG !== 'undefined'
-    ? CONFIG.BACKEND_URL + '/health'
+    ? CONFIG.BACKEND_URL.trim().replace(/\/$/, '') + '/health'
     : 'http://localhost:3000/health';
 
   const POLL_INTERVAL_ONLINE  = 30000;  // re-check every 30s when online
@@ -242,7 +242,7 @@ const ServerStatus = (() => {
     const timerId    = setTimeout(() => controller.abort(), CHECK_TIMEOUT);
 
     try {
-      const res = await fetch("https://hate-speach-backend.onrender.com/health", {
+      const res = await fetch(HEALTH_URL, {
         method: 'GET',
         signal: controller.signal,
         cache:  'no-store',
@@ -255,7 +255,7 @@ const ServerStatus = (() => {
         wakingToastShown     = false;
         setUI('online', 'Server online');
 
-        if (showToasts && wasOffline && State.isServerOnline !== null) {
+        if (showToasts && wasOffline) {
           Toast.show('Server is online and ready.', 'success', 3000);
         }
         scheduleNext(POLL_INTERVAL_ONLINE);
@@ -317,7 +317,7 @@ const API = (() => {
    */
   async function analyzeText(text) {
     const BACKEND_URL    = typeof CONFIG !== 'undefined'
-      ? CONFIG.MODERATE_ENDPOINT
+      ? CONFIG.MODERATE_ENDPOINT.trim().replace(/\/$/, '')
       : 'http://localhost:3000/moderate';
 
     const TIMEOUT_MS     = (typeof CONFIG !== 'undefined' ? CONFIG.REQUEST_TIMEOUT_MS : null) || 40000;
@@ -339,7 +339,7 @@ const API = (() => {
 
     let response;
     try {
-      response = await fetch("https://hate-speach-backend.onrender.com/moderate", {
+      response = await fetch(BACKEND_URL, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ text: trimmed }),
@@ -378,7 +378,7 @@ const API = (() => {
 
     const data = await response.json();
 
-    if (typeof data.flagged === 'undefined' || !data.scores) {
+    if (typeof data.flagged === 'undefined' || !data.scores || typeof data.scores !== 'object') {
       throw new Error('Unexpected response from moderation server.');
     }
 
@@ -561,7 +561,7 @@ const Actions = (() => {
       text.length > 300 ? text.slice(0, 300) + '…' : text,
       '',
       `OVERALL RISK SCORE:  ${overallScore}%`,
-      `FLAGGED BY OPENAI:   ${flaggedByApi ? 'YES ⚠️' : 'NO ✓'}`,
+      `FLAGGED BY AI:       ${flaggedByApi ? 'YES ⚠️' : 'NO ✓'}`,
       '',
       'CATEGORY BREAKDOWN:',
       `  Hate Speech:       ${scores.hate        ?? 'N/A'}%`,
@@ -745,6 +745,6 @@ const Actions = (() => {
       'color: #5b8ef0; font-weight: bold; font-size: 14px;',
       'color: #9494b8; font-size: 12px;'
     );
-    console.log('%cPowered by OpenAI Moderation API — https://platform.openai.com/docs/guides/moderation', 'color: #5a5a7a; font-size: 11px;');
+    console.log('%cPowered by HuggingFace Inference API — Falconsai/offensive_speech_detection', 'color: #5a5a7a; font-size: 11px;');
   }
 })();
