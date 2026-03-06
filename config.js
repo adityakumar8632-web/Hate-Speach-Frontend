@@ -24,8 +24,8 @@ const CONFIG = Object.freeze({
   // ── Backend Proxy ─────────────────────────────────────────────────────────
   // ⚠️  Replace this with your actual Render URL if it differs.
   //     Check your Render dashboard → your service → the URL at the top.
-  BACKEND_URL:        "https://hate-speach-backendo.onrender.com",
-  MODERATE_ENDPOINT:  "https://hate-speach-backendo.onrender.com/moderate",
+  BACKEND_URL:        "https://hate-speach-backend.onrender.com",
+  MODERATE_ENDPOINT:  "https://hate-speach-backend.onrender.com/moderate",
 
   // ── Input Limits ──────────────────────────────────────────────────────────
   MAX_CHARACTERS:     5000,
@@ -35,3 +35,4 @@ const CONFIG = Object.freeze({
   //         Users will now see the loading state instead of a timeout error.
   REQUEST_TIMEOUT_MS: 40000,
 });
+
