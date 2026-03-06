@@ -242,7 +242,7 @@ const ServerStatus = (() => {
     const timerId    = setTimeout(() => controller.abort(), CHECK_TIMEOUT);
 
     try {
-      const res = await fetch(/health, {
+      const res = await fetch("https://hate-speach-backend.onrender.com/health", {
         method: 'GET',
         signal: controller.signal,
         cache:  'no-store',
@@ -339,7 +339,7 @@ const API = (() => {
 
     let response;
     try {
-      response = await fetch("https://hate-speach-backend.onrender.com", {
+      response = await fetch("https://hate-speach-backend.onrender.com/moderate", {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ text: trimmed }),
