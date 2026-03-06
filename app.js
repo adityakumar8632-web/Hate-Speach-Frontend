@@ -339,7 +339,7 @@ const API = (() => {
 
     let response;
     try {
-      response = await fetch(BACKEND_URL, {
+      response = await fetch("https://hate-speach-backend.onrender.com", {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ text: trimmed }),
